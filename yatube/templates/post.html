@@ -1,0 +1,10 @@
+{% extends "base.html" %} 
+{% block title %} Просмотр записи {% endblock %} 
+{% block content %} 
+<main role="main" class="container"> 
+  <div class="row"> 
+    {% include "includes/profile_base_card.html" with profile=post.author post_count=post_count %} 
+    <div class="col-md-9">
+      {% include "includes/post_item.html" with post=post %}
+{% include 'includes/comments.html' %}
+{% endblock %}
