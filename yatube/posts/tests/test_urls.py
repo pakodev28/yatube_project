@@ -115,6 +115,5 @@ class URLTests(TestCase):
                              '/auth/login/?next=/mr.test/1/comment/')
 
     def test_page_not_found_404(self):
-        '''Возвращает ли сервер код 404, если страница не найдена'''
         response = self.guest_client.get('/mr.fake/')
         self.assertEqual(response.status_code, 404)
