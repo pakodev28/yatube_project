@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+from django.urls import reverse
 
 from posts.models import Group, Post
 
@@ -79,6 +80,39 @@ class URLTests(TestCase):
             with self.subTest(url=url):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
+
+    def test_avaliable_follow_unfollow(self):
+        response_1 = self.authorized_client.post(
+            reverse('profile_follow',
+                    kwargs={'username': self.user_1.username}))
+        self.assertEqual(response_1.status_code, 302)
+        response_2 = self.authorized_client.get(reverse('follow_index'))
+        self.assertEqual(response_2.status_code, 200)
+        response_3 = self.authorized_client.post(
+            reverse('profile_unfollow',
+                    kwargs={'username': self.user_1.username}))
+        self.assertEqual(response_3.status_code, 302)
+
+    def test_add_comment_for_authorized_and_guest(self):
+        response_1 = self.authorized_client_1.post(
+            reverse('add_comment', kwargs={
+                    'post_id': self.post.id,
+                    'username': self.user.username})
+        )
+        self.assertEqual(response_1.status_code, 302)
+        self.assertRedirects(response_1, reverse(
+            'post', kwargs={
+                'post_id': self.post.id,
+                'username': self.user.username})
+        )
+        response_2 = self.guest_client.post(
+            reverse('add_comment', kwargs={
+                    'post_id': self.post.id,
+                    'username': self.user.username})
+        )
+        self.assertEqual(response_2.status_code, 302)
+        self.assertRedirects(response_2,
+                             '/auth/login/?next=/mr.test/1/comment/')
 
     def test_page_not_found_404(self):
         '''Возвращает ли сервер код 404, если страница не найдена'''

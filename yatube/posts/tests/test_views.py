@@ -33,6 +33,7 @@ class ViewsTests(TestCase):
             content_type='image/gif'
         )
         cls.user = User.objects.create_user(username='mr.test')
+        cls.user_2 = User.objects.create_user(username='follower user')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -48,6 +49,9 @@ class ViewsTests(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(ViewsTests.user)
+        self.auth_client = Client()
+        self.auth_client.force_login(ViewsTests.user_2)
+        self.guest_client = Client()
 
     @classmethod
     def tearDownClass(cls):
@@ -170,6 +174,23 @@ class ViewsTests(TestCase):
             'page')[0].text,
             'Попадает в кэш'
         )
+
+    def test_follow_unfollow(self):
+        post = Post.objects.get(author=ViewsTests.user)
+        self.auth_client.post(
+            reverse('profile_follow',
+                    kwargs={'username': self.user.username}), follow=True)
+        response_1 = self.auth_client.get(
+            reverse('follow_index')
+        )
+        self.assertContains(response_1, post)
+        self.auth_client.post(
+            reverse('profile_unfollow',
+                    kwargs={'username': self.user.username}), follow=True)
+        response_2 = self.auth_client.get(
+            reverse('follow_index')
+        )
+        self.assertNotContains(response_2, post)
 
 
 class PaginatorViewsTest(TestCase):

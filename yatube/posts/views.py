@@ -101,25 +101,26 @@ def post_edit(request, username, post_id):
 
 @login_required
 def add_comment(request, username, post_id):
-    post = get_object_or_404(Post, id=post_id, author__username=username)
+    post = get_object_or_404(Post, id=post_id,
+                             author__username=username)
     form = CommentForm(request.POST or None)
+
     if form.is_valid():
         comment = form.save(commit=False)
         comment.author = request.user
         comment.post = post
-        form.save()
-        return redirect('post', username=username, post_id=post_id)
-    return render(request, 'comments.html', {'form': form, 'post': post})
+        comment.save()
+    return redirect('post', username=username, post_id=post_id)
 
 
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(posts, 10)
-    page_num = request.GET.get('page')
-    page = paginator.get_page(page_num)
-    return render(request, 'follow.html',
-                  {'page': page, 'posts': posts})
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+    context = {'page': page, 'posts': posts}
+    return render(request, 'follow.html', context)
 
 
 @login_required
@@ -128,6 +129,7 @@ def profile_follow(request, username):
     follow_obj = Follow.objects.filter(user=request.user, author=author)
     if request.user != author and follow_obj.exists() is False:
         Follow.objects.create(user=request.user, author=author)
+    return redirect('profile', username)
 
 
 @login_required
