@@ -37,7 +37,8 @@ def profile(request, username):
     page_num = request.GET.get('page')
     page = paginator.get_page(page_num)
     if request.user.is_authenticated:
-        following = Follow.objects.filter(user=request.user, author=author)
+        following = Follow.objects.filter(
+            user=request.user, author=author).exists()
         return render(
             request,
             'profile.html',
@@ -49,15 +50,15 @@ def profile(request, username):
 
 
 def post_view(request, username, post_id):
-    profile = get_object_or_404(User, username=username)
-    post = get_object_or_404(Post, pk=post_id, author=profile)
-    post_count = profile.user_posts.all().count()
+    post = get_object_or_404(Post.objects.select_related('author'),
+                             id=post_id, author__username=username)
+    post_count = post.author.user_posts.all().count()
     comments = post.comments.all()
     form = CommentForm()
     return render(
         request,
         'post.html',
-        {'post': post, 'author': profile, 'post_count': post_count,
+        {'post': post, 'author': post.author, 'post_count': post_count,
          'comments': comments, 'form': form}
     )
 
@@ -127,7 +128,7 @@ def follow_index(request):
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     follow_obj = Follow.objects.filter(user=request.user, author=author)
-    if request.user != author and follow_obj.exists() is False:
+    if request.user != author and not follow_obj.exists():
         Follow.objects.create(user=request.user, author=author)
     return redirect('profile', username)
 
